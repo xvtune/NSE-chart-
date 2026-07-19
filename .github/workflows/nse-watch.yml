@@ -1,0 +1,41 @@
+name: NSE Price Watch
+
+on:
+  schedule:
+    # 13:30 UTC = 16:30 EAT (Nairobi), well after ~15:00 EAT close.
+    # Cron only understands UTC, and this doesn't shift for daylight
+    # saving (Nairobi has none, so this stays correct year-round).
+    - cron: "30 13 * * 1-5"
+  workflow_dispatch: {}   # lets you click "Run workflow" manually to test
+
+permissions:
+  contents: write   # needed so the workflow can commit the updated db back
+
+jobs:
+  watch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run price watch
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: python nse_price_watch.py
+
+      - name: Commit updated price history
+        run: |
+          git config user.name "nse-watch-bot"
+          git config user.email "actions@github.com"
+          git add nse_watch.db
+          git diff --cached --quiet || git commit -m "Update price history $(date -u +%Y-%m-%d)"
+          git push
