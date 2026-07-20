@@ -23,8 +23,16 @@ for a server.
 """
 
 import os
+import socket
 import requests
+import requests.packages.urllib3.util.connection as urllib3_cn
 import sqlite3
+
+# Same IPv4-only workaround as nse_price_watch.py — see comment there.
+def _allowed_gai_family():
+    return socket.AF_INET
+
+urllib3_cn.allowed_gai_family = _allowed_gai_family
 
 DB_PATH = "nse_watch.db"
 TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN", "")
