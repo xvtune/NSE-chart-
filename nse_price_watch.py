@@ -23,11 +23,22 @@ READ THIS BEFORE YOU RELY ON IT:
 
 import io
 import os
+import socket
 import requests
+import requests.packages.urllib3.util.connection as urllib3_cn
 import pandas as pd
 import sqlite3
 import time
 from datetime import datetime
+
+# Work around a known GitHub Actions runner issue: some hosted runners
+# attempt IPv6 first for sites that publish both A and AAAA DNS records,
+# then fail with "Network is unreachable" because the runner has no
+# outbound IPv6 route. Forcing IPv4-only DNS resolution avoids this.
+def _allowed_gai_family():
+    return socket.AF_INET
+
+urllib3_cn.allowed_gai_family = _allowed_gai_family
 
 # ---------------- CONFIG ----------------
 WATCHLIST = {
